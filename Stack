@@ -1,0 +1,167 @@
+version: '2'
+# Original made by u/SpongederpSquarefap at r/homelab
+# configured for personal use by me ulrikkl u/ulrikkl
+# Last updated
+# 13-04-2020
+
+services:
+  
+  # JDownloader
+  # For downloading anything
+  # Make sure to enter the container and run the below command
+  # configure EMAIL PASSWORD
+  jdownloader:
+    container_name: jdownloader
+    image: jaymoulin/jdownloader
+    restart: always
+    volumes:
+     - /var/lib/docker/volumes/downloads:/downloads
+     - /var/lib/docker/volumes/jdownloader-config:/opt/JDownloader/cfg
+
+  # qBittorrent
+  # Runs on port 8080
+  # Make sure to turn off UPNP in the settings (or better yet, disabled UPNP on your router)
+  qbittorrent:
+    container_name: qbittorrent
+    image: linuxserver/qbittorrent
+    restart: always
+    ports:
+     - 8080:8080
+    environment:
+     - PUID=1000
+     - PGID=1000
+     - TZ=Europe/London
+     - UMASK_SET=022
+     - WEBUI_PORT=8080
+    volumes:
+     - /var/lib/docker/volumes/qbittorrent-config:/config
+     - /var/lib/docker/volumes/downloads:/downloads
+     
+  # Sonarr
+  # For downloading TV shows
+  # Runs on port 8989
+  sonarr:
+    container_name: sonarr
+    image: linuxserver/sonarr
+    restart: always
+    ports:
+    - 8989:8989
+    environment:
+     - PUID=1000
+     - PGID=1000
+     - TZ=Europe/London
+     - UMASK_SET=022
+    volumes:
+     - /var/lib/docker/volumes/sonarr-data:/config
+     - /var/lib/docker/volumes/sonarr-tvseries:/tv
+     - /var/lib/docker/volumes/downloads:/downloads
+
+  # Radarr
+  # For downloading movies
+  # Runs on port 7878
+  radarr:
+    container_name: radarr
+    image: linuxserver/radarr
+    restart: always
+    ports:
+    - 7878:7878
+    environment:
+     - PUID=1000
+     - PGID=1000
+     - TZ=Europe/Denmark
+     - UMASK_SET=022
+    volumes:
+     - /var/lib/docker/volumes/radarr-data:/config
+     - /var/lib/docker/volumes/radarr-movies:/movies
+     - /var/lib/docker/volumes/downloads:/downloads
+
+  # Jackett
+  # Indexer for Sonarr and Radarr
+  # Runs on port 9117
+  jackett:
+    container_name: jackett
+    image: linuxserver/jackett
+    restart: always
+    ports:
+    - 9117:9117
+    environment:
+     - PUID=1000
+     - PGID=1000
+     - TZ=Europe/London
+     - UMASK_SET=022
+    volumes:
+     - /var/lib/docker/volumes/jackett-data:/config
+     - /var/lib/docker/volumes/jackett-blackhole:/downloads
+
+  # Firefox
+  # For disposable web browsing behind a VPN
+  # Runs on port 5800
+  firefox:
+    container_name: firefox
+    image: jlesage/firefox
+    restart: always
+    shm_size: 2g
+    ports:
+    - 5800:5800
+    volumes:
+     - /var/lib/docker/volumes/firefox-config:/config:rw
+     - /var/lib/docker/volumes/downloads:/downloads
+   
+  # NZBGet
+  # For downloading Usenet files
+  # Runs on port 6789
+  nzbget:
+    container_name: nzbget
+    image: linuxserver/nzbget
+    restart: always
+    ports:
+    - 6789:6789
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Denmark
+    volumes:
+      - /var/lib/docker/volumes/nzbget-config:/config
+      - /var/lib/docker/volumes/downloads:/downloads
+      
+  # Filebrowser
+  # For web management of files
+  # Runs on port 1111
+  # To ensure the DB containing your login persists through a rebuild, enter the container and run
+  # mkdir /var/lib/docker/volumes/filebrowser/
+  # touch /var/lib/docker/volumes/filebrowser/filebrowser.db
+  filebrowser:
+    container_name: filebrowser
+    image: filebrowser/filebrowser
+    restart: always
+    volumes:
+      - /var/lib/docker/volumes:/srv
+      - /var/lib/docker/volumes/filebrowser/filebrowser.db:/database.db
+    ports:
+      - 192.168.0.194:1111:80
+      
+      
+  # Pihole
+  # Adblocker
+  #runs on port 80
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    ports:
+      - "67:67/udp"
+      - "80:80/tcp"
+    environment:
+      TZ: 'Europe/Denmark'
+      WEBPASSWORD: 'Password'
+    # Volumes store your data between container upgrades
+    volumes:
+       - './etc-pihole/:/etc/pihole/'
+       - './etc-dnsmasq.d/:/etc/dnsmasq.d/'
+    dns:
+      - 127.0.0.1
+      - 1.1.1.1
+    # Recommended but not required (DHCP needs NET_ADMIN)
+    #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
