@@ -1,0 +1,76 @@
+    Install Ubuntu server 18.04
+
+    Boot up the installer
+
+    Choose your language and locale
+
+    Change your IP to a static address
+
+    My home network is 192.168.0.0/24 so I chose 192.168.0.19
+
+    Use the entire disk and set up an LVM
+
+    Don't forget to expand the disk size
+
+    Enter your username and server hostname
+
+    I chose "user1" and "docker-test"
+
+    Check the box to install OpenSSH server
+
+    Skip the snaps as there's issues with the Docker snap
+
+    Wait for the server to install
+
+    Reboot the server once install is complete
+    
+
+use a ssh client if you want to.
+I use Termius.
+
+run
+> sudo su
+enter password
+
+then run
+> apt update -y && apt upgrade -y && reboot
+Enter y for any prompts
+wait for system to reboot
+
+
+###
+### Installing Docker
+### Instuctions sourced from this page: https://get.docker.com/
+> curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh
+
+Run this to add your user account to the Docker group
+> sudo usermod -aG docker $USER
+
+now reboot
+> sudo reboot
+
+Once rebooted try running hellow-world as non-root
+> docker run hello-world
+The container should run and confirm you can run containers without needing to escalate to root each time
+
+
+###
+### Installing Portainer for Web Container Management
+### Instructions sourced from this page: https://www.portainer.io/installation/
+
+create the portainer config volume
+> docker volume create portainer_data
+
+Run the below to start the container
+> docker run -d --restart always -p 8000:8000 -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
+
+Browse to the http://serverip:9000 to confirm it works.
+
+
+###
+### Configuring Filebrowser
+
+Before we can deploy the containers we need to create the DB file for filebrowser
+
+> sudo mkdir /var/lib/docker/volumes/filebrowser/
+> sudo touch /var/lib/docker/volumes/filebrowser/filebrowser.db
